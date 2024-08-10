@@ -1,0 +1,66 @@
+import { DataTypes } from 'sequelize';
+import { sequelize } from "../../db/index.js";
+
+
+export const ProductModel = sequelize.define('productsModel', {
+    id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true
+    },
+    productId: { type: DataTypes.STRING, default:() => uuidv4 },
+    productCode: { type: DataTypes.STRING },
+    productName: { type: DataTypes.STRING, allowNull: false },
+    HSNCode: { type: DataTypes.STRING },
+    variantGroup: { type: DataTypes.STRING },
+    MRP: { type: DataTypes.INTEGER },
+    purchasePrice: { type: DataTypes.INTEGER },
+    fulfillmentOption: { type: DataTypes.STRING },
+    fulfillmentId: { type: DataTypes.STRING },
+    countryOfOrigin: { type: DataTypes.STRING },
+    GST_Percentage: { type: DataTypes.INTEGER },
+    productCategory: { type: DataTypes.STRING },
+    productSubCategory1: { type: DataTypes.STRING },
+    productSubCategory2: { type: DataTypes.STRING },
+    productSubCategory3: { type: DataTypes.STRING },
+    quantity: { type: DataTypes.INTEGER },
+    barcode: { type: DataTypes.INTEGER },
+    maxAllowedQty: { type: DataTypes.INTEGER },
+    packQty: { type: DataTypes.STRING },
+    UOM: { type: DataTypes.STRING },
+    UOMValue: { type: DataTypes.STRING },
+    length: { type: DataTypes.STRING },
+    breadth: { type: DataTypes.STRING },
+    height: { type: DataTypes.STRING },
+    weight: { type: DataTypes.STRING },
+    isReturnable: { type: DataTypes.BOOLEAN },
+    returnWindow: { type: DataTypes.STRING },
+    isVegetarian: { type: DataTypes.BOOLEAN },
+    manufactureName: { type: DataTypes.STRING },
+    manufactureDate: { type: DataTypes.STRING },
+    nutritionalInfo: { type: DataTypes.STRING },
+    additiveInfo: { type: DataTypes.STRING },
+    instructions: { type: DataTypes.STRING },
+    isCancellable: { type: DataTypes.BOOLEAN },
+    availableOnCOD: { type: DataTypes.BOOLEAN },
+    longDescription: { type: DataTypes.STRING },
+    description: { type: DataTypes.STRING },
+    organization: { type: DataTypes.STRING },
+    createdBy: { type: DataTypes.STRING },
+    manufactureOrPackerName: { type: DataTypes.STRING },
+    manufactureOrPackerAddress: { type: DataTypes.STRING },
+    commonOrGenericNameOfCommodity: { type: DataTypes.STRING },
+    monthYearOfManufacturePackingImport: { type: DataTypes.STRING },
+    importFSSAILicenseNo: { type: DataTypes.STRING },
+    brandOwnerFSSAILicenseNo: { type: DataTypes.STRING },
+    published: { type: DataTypes.BOOLEAN },
+    vegNonVeg: { type: DataTypes.STRING },
+    timing: { type: DataTypes.JSON },
+    images: { type: DataTypes.JSON },
+}, {
+    timestamps: true,
+    createdAt: "created_at",
+    updatedAt: "updated_at"
+});
+
+ProductModel.sync();
