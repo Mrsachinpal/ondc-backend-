@@ -10,7 +10,7 @@ import e from "cors";
 
 class UserAdminController {
     async register(req, res) {
-        try {
+        try    {
             const { email_id, first_name, last_name, password, role } = req.body
             const hashedPassword = await bcrypt.hash(password, 10)
             const data = {
