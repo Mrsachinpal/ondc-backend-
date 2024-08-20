@@ -6,7 +6,6 @@ import { ProductAttribute } from '../../../model/product/product_attribute.js';
 import { v4 as uuidv4 } from "uuid";
 import ProductModel from "../models/product.model.js";
 import { DuplicateRecordFoundError } from "../../lib/errors/index.js"
-import { where } from 'sequelize';
 
 
 class ProductService {
@@ -185,31 +184,46 @@ class ProductService {
         }
     }
 
+    // async list(params, seller) {
+    //     try {
+
+    //         const { orgId, providerId } = seller
+    //         let query = {
+    //             organization: providerId ?? orgId
+    //         };
+
+    //         if (params.name) {
+    //             query.productName = { $regex: params.name, $options: 'i' };
+    //         }
+    //         if (params.category) {
+    //             query.productCategory = params.category;
+    //         }
+    //         if (params.stock && params.stock === 'inStock') {
+    //             query.quantity = { $gt: 0 }
+    //         } else if (params.stock && params.stock === 'outofStock') {
+    //             query.quantity = { $lte: 0 }
+    //         }
+    //         const data = await ProductModel.findAll({ where: query })  ///.sort({ createdAt: -1 }).skip(params.offset * params.limit).limit(params.limit);
+    //         const count = await ProductModel.count(query);
+    //         let products = {
+    //             count,
+    //             data
+    //         }
+    //         return products;
+    //     } catch (error) {
+    //         console.log("Error", error);
+    //     }
+    // }
+
     async list(params, seller) {
         try {
-
-            const { orgId, providerId } = seller
-            let query = {
-                organization: providerId ?? orgId
-            };
-
-            if (params.name) {
-                query.productName = { $regex: params.name, $options: 'i' };
-            }
-            if (params.category) {
-                query.productCategory = params.category;
-            }
-            if (params.stock && params.stock === 'inStock') {
-                query.quantity = { $gt: 0 }
-            } else if (params.stock && params.stock === 'outofStock') {
-                query.quantity = { $lte: 0 }
-            }
-            const data = await ProductModel.findAll({ where: query })  ///.sort({ createdAt: -1 }).skip(params.offset * params.limit).limit(params.limit);
-            const count = await ProductModel.count(query);
-            let products = {
-                count,
-                data
-            }
+            const { orgId, providerId } = seller;
+            const products = await ProductModel.find({
+                $or: [
+                    { organization: orgId ?? providerId },
+                    { createdBy: providerId ?? orgId }
+                ]
+            })
             return products;
         } catch (error) {
             console.log("Error", error);
@@ -261,24 +275,38 @@ class ProductService {
     async search(params, seller) {
         try {
             const { orgId, providerId } = seller;
-            const { name } = params;
-                const products = await ProductModel.find({
+            const { name, stock } = params;
+
+            let query = {
                 $or: [
                     { organization: orgId },
                     { createdBy: providerId }
                 ]
-            }).exec();
-            const regex = new RegExp(name, 'i');
-            const filteredProducts = products.filter(product => 
-                regex.test(product.productName)
-            );
-    
-            return filteredProducts;
+            };
+
+            if (stock === "inStock") {
+                query.quantity = { $gt: 0 };
+            } else if (stock === "outOfStock") {
+                query.quantity = { $lte: 0 };
+            }- 
+            console.log("query", query);
+            let products = await ProductModel.find(query).exec();
+            console.log("products", products);
+
+            if (name) {
+                const regex = new RegExp(name, 'i');
+                products = products.filter(product =>
+                    regex.test(product.productName)
+                );
+            }
+
+            return products;
         } catch (error) {
             console.log("Error", error);
         }
     }
-    
+
+
 }
 
 export default new ProductService();

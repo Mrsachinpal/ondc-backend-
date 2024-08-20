@@ -19,7 +19,7 @@ class ProductController {
                 message: "Error in ProductController",
                 error: error
             });
-        }rd
+        } rd
     }
 
     async createWithVariants(req, res) {
@@ -40,7 +40,7 @@ class ProductController {
         try {
             console.log('updateapi hit hui initially');
             const params = req.params
-            console.log('object id ',params);
+            console.log('object id ', params);
             const { authorization: token } = req.headers;
             const seller = jwt.verify(token, secret_key);
             const product = await ProductService.update(params.productId, req.body, seller);
@@ -225,7 +225,9 @@ class ProductController {
             return res.send(products);
         } catch (error) {
             res.status(400).json({
+                message: "Error, didn't shown list",
                 error: error
+  
             });
         }
     }
@@ -238,7 +240,6 @@ class ProductController {
             query.offset = 0;
             query.limit = 50;
             const products = await ProductService.search(query, seller);
-            console.log(` product: ${products}`)
             return res.send(products);
         } catch (error) {
             res.status(400).json({
