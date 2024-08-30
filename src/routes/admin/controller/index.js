@@ -1,16 +1,19 @@
 import User from "../../../model/user/index.js";
-import jwt from "jsonwebtoken"
+import jwt, { decode } from "jsonwebtoken"
+import { Op } from 'sequelize';
+import nodemailer from 'nodemailer';
 import bcrypt from "bcrypt"
 import { config } from "../../../config/index.js";
-const { secret_key } = config;
+const { secret_key, ethereal_email, ethereal_password } = config;
 
 import { bankInfo, OrgDetails, userDetails, staffDetails, tokenBlocker } from "../../../model/admin/index.js"
 import { v4 as uuidv4 } from "uuid";
-import e from "cors";
+
+
 
 class UserAdminController {
     async register(req, res) {
-        try    {
+        try {
             const { email_id, first_name, last_name, password, role } = req.body
             const hashedPassword = await bcrypt.hash(password, 10)
             const data = {
@@ -81,10 +84,11 @@ class UserAdminController {
 
     async adminRegister(req, res) {
         try {
+            console.log("register api hit ")
             const { detailsOfProvider, KYCdetails, KYCurl, bankDetails } = req.body;
-            const { email, mobileNumber, Orgname, password, role, accessStatus, isApprovedByAdmin } = detailsOfProvider; // getting all info
-            const { accountHolderName, accountNo, bankName, branchName, ifscCode, cancelledChequeURL } = bankDetails    // getting all info
-            const { providerName, registeredAdd, storeEmail, mobileNo, PANNo, GSTIN, FSSAINo } = KYCdetails;    // only FSSAINO is not got 
+            const { email, mobileNumber, Orgname, password, role, accessStatus, isApprovedByAdmin } = detailsOfProvider;
+            const { accountHolderName, accountNo, bankName, branchName, ifscCode, cancelledChequeURL } = bankDetails
+            const { providerName, registeredAdd, storeEmail, mobileNo, PANNo, GSTIN, FSSAINo } = KYCdetails;
             const { address, idProof, pan, gst } = KYCurl;  // gtting all details 
 
             const hashedPassword = await bcrypt.hash(password, 10);
@@ -118,7 +122,11 @@ class UserAdminController {
             if (GSTINExist) {
                 return res.status(422).json({ message: 'GSTIN already exists', success: false });
             }
-
+            const FSSAIExist = await OrgDetails.findOne({ where: { FSSAINo: FSSAINo } });
+            if (FSSAIExist) {
+                return res.status(422).json({ message: 'FSSAINo already exists', success: false });
+            }
+            // console.log("FSSAI no. ",FSSAINo)
 
             const UserDetails = {
                 providerId: uuidv4(),
@@ -151,7 +159,7 @@ class UserAdminController {
                 mobileNo: mobileNo,
                 PANNo: PANNo,
                 GSTIN: GSTIN,
-                // FSSAINo: FSSAINo, // not getting info
+                FSSAINo: FSSAINo,
                 addressURL: address,
                 idProofURL: idProof,
                 panURL: pan,
@@ -166,9 +174,9 @@ class UserAdminController {
             const token = jwt.sign({ email, sellerId }, secret_key, { expiresIn: '1h' });
             res.status(200).json({
                 message: "Seller added successfully",
-                token: token
+                token: token,
+                success: true
             });
-
         } catch (error) {
 
             console.log(error)
@@ -181,30 +189,27 @@ class UserAdminController {
     async adminStoreDetail(req, res) {
         try {
 
-            console.log(req.headers.authorization);
             const { authorization } = req.headers;
             if (!authorization) {
                 return res.status(401).json({ message: 'Authorization header is missing' });
             }
             const adminRegisterToken = authorization;
             const decodedToken = jwt.verify(adminRegisterToken, secret_key);
-            const { sellerId } = decodedToken;
-            if (!sellerId) {
-                return res.status(400).json({ message: 'SellerId is missing from the token' });
+            const { sellerId, providerId } = decodedToken;
+            console.log("decoded token", decodedToken);
+
+            // Use providerId if it exists, otherwise use sellerId
+            const UniqueKey = providerId || sellerId;
+
+            if (!UniqueKey) {
+                return res.status(400).json({ message: 'Unique Id is missing from the token' });
             }
-            const providerId = sellerId;
 
             const { storeDetails } = req.body;
-            const { FSSAINo, category, logoURL, location, locationAvailabilityPANIndia, defaultCancellable, defaultReturnable, fulfillments,
+            const { category, logoURL, location, locationAvailabilityPANIndia, defaultCancellable, defaultReturnable, fulfillments,
                 supportDetails, radius, logisticsBppId, logisticsDeliveryType, Address, storeTimings } = storeDetails;
             const { building, city, state, country, code, locality } = Address;
             const { status, holidays, enabled } = storeTimings;
-
-
-            const fssaiNoExist = await OrgDetails.findOne({ where: { FSSAINo: FSSAINo } });
-            if (fssaiNoExist) {
-                return res.status(422).json({ message: 'FSSAI Number already exists', success: false });
-            }
 
             const fulfillmentsData = fulfillments.map(fd => ({
                 id: uuidv4(),
@@ -215,45 +220,49 @@ class UserAdminController {
                 }
             }));
 
+            // Search for the user based on providerId or sellerId
             const isExist = await userDetails.findOne({
-                where: { providerId: providerId },
+                where: { providerId: UniqueKey },
                 raw: true
             });
 
             if (!isExist) {
-                return res.status(404).json({ message: "ProviderId does not exist" });
+                return res.status(404).json({ message: "ProviderId or SellerId does not exist" });
             }
 
             const OrganizationDetails = {
-                FSSAINo: FSSAINo,
-                category: category,
-                logoURL: logoURL,
-                location: location,
-                locationAvailabilityPANIndia: locationAvailabilityPANIndia,
-                defaultCancellable: defaultCancellable,
-                defaultReturnable: defaultReturnable,
+                category,
+                logoURL,
+                location,
+                locationAvailabilityPANIndia,
+                defaultCancellable,
+                defaultReturnable,
                 fulfillments: fulfillmentsData,
-                building: building,
-                city: city,
-                state: state,
-                country: country,
-                code: code,
-                locality: locality,
-                supportDetails: supportDetails,
+                building,
+                city,
+                state,
+                country,
+                code,
+                locality,
+                supportDetails,
                 storeTimingsStatus: status,
                 storeTimingHolidays: holidays,
                 storeTimingEnabled: enabled,
-                radius: radius,
-                logisticsBppId: logisticsBppId,
-                logisticsDeliveryType: logisticsDeliveryType
-            }
+                radius,
+                logisticsBppId,
+                logisticsDeliveryType
+            };
 
+            // Update the organization details using either providerId or sellerId
             await OrgDetails.update(OrganizationDetails, {
-                where: { providerId: providerId }
+                where: { providerId: UniqueKey }
             });
-            const token = jwt.sign({ email, sellerId }, secret_key, { expiresIn: '1h' });
 
-            res.status(201).json({ message: "Store details saved successfully" });
+            const token = jwt.sign({ sellerId }, secret_key, { expiresIn: '1h' });
+            res.status(201).json({
+                message: "Store details saved successfully",
+                success: true
+            });
 
         } catch (error) {
             console.log(error);
@@ -265,12 +274,10 @@ class UserAdminController {
         try {
             const { email, password } = req.body;
 
-            const user = await userDetails.findOne(
-                {
-                    where: { email: email },
-                    raw: true
-                },
-            );
+            const user = await userDetails.findOne({
+                where: { email: email },
+                raw: true
+            });
 
             const staff = await staffDetails.findOne({
                 where: { email: email },
@@ -278,19 +285,18 @@ class UserAdminController {
             });
 
             if (!user && !staff) {
-                return res.status(401).json({ message: 'Invalid username' });
+                return res.status(401).json({ message: 'Invalid email' });
             }
 
-            let adminpasswordMatch;
-            let staffpasswordMatch;
+            let passwordMatch = false;
+
             if (user) {
-                adminpasswordMatch = await bcrypt.compare(password, user.password);
-
-            } else {
-                staffpasswordMatch = await bcrypt.compare(password, staff.password);
+                passwordMatch = await bcrypt.compare(password, user.password);
+            } else if (staff) {
+                passwordMatch = await bcrypt.compare(password, staff.password);
             }
 
-            if (adminpasswordMatch && staffpasswordMatch) {
+            if (!passwordMatch) {
                 return res.status(401).json({ message: 'Invalid password' });
             }
 
@@ -299,21 +305,152 @@ class UserAdminController {
             if (user) {
                 const { role, providerId, Orgname } = user;
                 token = jwt.sign({ role, providerId, Orgname }, secret_key, { expiresIn: '8h' });
-                message = "Admin logged in successfully"
-            } else {
-                const { orgId, staffId, name, email, inventory, orders, complaints, accessStatus } = staff
+                message = "Admin logged in successfully";
+            } else if (staff) {
+                const { orgId, staffId, name, email, inventory, orders, complaints, accessStatus } = staff;
                 token = jwt.sign({ orgId, staffId, name, email, inventory, orders, complaints, accessStatus }, secret_key, { expiresIn: '8h' });
-                message = "Staff logged in successfully"
+                message = "Staff logged in successfully";
             }
-            res.status(200).json({
+
+            // Return success response with token
+            return res.status(200).json({
                 message: message,
-                token: token
+                token: token,
+                success: true
             });
 
         } catch (error) {
-            res.status(400).json({
-                error: error
+            return res.status(400).json({ error: 'Server error', details: error.message });
+        }
+    }
+
+    async forgotPassword(req, res) {
+        try {
+            const { email } = req.body;
+            const user = await userDetails.findOne(
+                {
+                    where: { email },
+                    raw: true
+                },
+            );
+
+            const staff = await User.findOne({
+                where: { email_id: email },
+                raw: true
             });
+
+            if (!user && !staff) {
+                return res.status(401).json({ message: 'Email not found' });
+            }
+
+            if (user) {
+                const token = jwt.sign({ Provider_Id: user.providerId }, secret_key, { expiresIn: '1h' })
+                const transporter = nodemailer.createTransport({
+                    host: 'smtp.ethereal.email',
+                    port: 587,
+                    auth: {
+                        user: ethereal_email,
+                        pass: ethereal_password
+                    }
+                });
+                console.log("transporter", transporter);
+                const mailOptions = {
+                    from: ethereal_email,
+                    to: user.email,
+                    subject: 'Password Reset Request',
+                    text: `Click the following link to reset your password: 
+                http://localhost:8080/dashboard/forgotPassword/${token}`
+                };
+                await transporter.sendMail(mailOptions);
+                res.json({
+                    message: 'Password reset link sent to your email',
+                });
+            } else if (staff) {
+                const token = jwt.sign({ email_id:staff.email_id}, secret_key, { expiresIn: '1h' });
+                const transporter = nodemailer.createTransport({
+                    host: 'smtp.ethereal.email',
+                    port: 587,
+                    auth: {
+                        user: ethereal_email,
+                        pass: ethereal_password
+                    }
+                });
+                console.log("transporter", transporter);
+                const mailOptions = {
+                    from: ethereal_email,
+                    to: staff.email_id,
+                    subject: 'Password Reset Request',
+                    text: `Click the following link to reset your password: 
+                http://localhost:8080/dashboard/forgotPassword/${token}`
+                };
+                await transporter.sendMail(mailOptions);
+                res.json({
+                    message: 'Password reset link sent to your email',
+                });
+
+            }
+
+        } catch (error) {
+            res.status(400).json({ message: error });
+        }
+
+    }
+
+    async forgotPasswordToken(req, res) {
+        const { token } = req.params;
+        const { newPassword } = req.body;
+        console.log("token", token)
+        try {
+            const decoded = jwt.verify(token, secret_key);
+            console.log("decoded", decoded)
+            const { Provider_Id, email_id } = decoded;
+            console.log("providerId: ", Provider_Id);
+
+
+            if (Provider_Id) {
+                const user = await userDetails.findOne({
+                    where: {  providerId:Provider_Id },
+                    raw: true
+                });
+                console.log("user",user)
+                if (!user) {
+                    return res.status(404).json({ message: 'User not found' });
+                }
+                const hashedPassword = await bcrypt.hash(newPassword, 10);
+                await userDetails.update(
+                    { password: hashedPassword },
+                    { where: { providerId:Provider_Id } }
+                );
+                console.log("Password reset for user");
+
+                return res.json({ message: 'Password has been reset successfully' });
+            } else if (email_id) {
+
+                const staff = await User.findOne({
+                    where: {email_id},
+                    raw: true
+                });
+
+                if (!staff) {
+                    return res.status(404).json({ message: 'Staff not found' });
+                }
+                const hashedPassword = await bcrypt.hash(newPassword, 10);
+                await User.update(
+                    { password: hashedPassword },
+                    {
+                        where: {email_id},
+                    }
+                );
+                console.log("Password reset for staff");
+
+                return res.json({ message: 'Password has been reset successfully' });
+            }
+
+            return res.status(400).json({ message: 'Invalid token structure' });
+
+        } catch (error) {
+            console.error(error);
+            return res.status(400).json({ message: 'Invalid or expired token' });
         }
     }
 

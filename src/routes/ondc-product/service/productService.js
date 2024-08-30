@@ -8,11 +8,11 @@ import ProductModel from "../models/product.model.js";
 import { DuplicateRecordFoundError } from "../../lib/errors/index.js"
 
 
-class ProductService {
+class ProductService {  
     async create(data, currentSeller) {
         try {
             const { orgId, staffID, providerId } = currentSeller;
-            const productExist = await ProductModel.findOne({ productName: data.productName, organization: providerId ?? orgId });
+            const productExist = await ProductModel.findOne({ productName: commonDetails.data.productName, organization: providerId ?? orgId });
             if (productExist) {
                 throw new DuplicateRecordFoundError(MESSAGES.PRODUCT_ALREADY_EXISTS)
             }
@@ -286,10 +286,10 @@ class ProductService {
 
             if (stock === "inStock") {
                 query.quantity = { $gt: 0 };
-            } else if (stock === "outOfStock") {
+            } else if (stock === "outOfStock") {    
                 query.quantity = { $lte: 0 };
-            }- 
-            console.log("query", query);
+            } 
+            // console.log("query", query);
             let products = await ProductModel.find(query).exec();
             console.log("products", products);
 

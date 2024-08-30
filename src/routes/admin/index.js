@@ -18,5 +18,8 @@ router.get("/staffList/:id", UserAdminController.staffList);
 router.put("/staffaccessControl", UserAdminController.staffaccessControl);
 router.put("/sellerUpdate", UserAdminController.sellerUpdate);
 router.post("/logout", UserAdminController.logout);
+router.post('/forgotPassword',UserAdminController.forgotPassword);
+router.post('/forgotPassword/:token',UserAdminController.forgotPasswordToken);
+
  
 export default router;

@@ -32,7 +32,7 @@ export const userDetails = sequelize.define('userDetails', {
     },
     isApprovedByAdmin: {
         type: DataTypes.BOOLEAN
-    },
+    }
 }, {
     timestamps: true,
     createdAt: "created_at",

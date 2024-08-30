@@ -14,5 +14,8 @@ export const config = {
     db_password: process.env.DB_PASSWORD,
     db_host: process.env.DB_HOST,
     secret_key: process.env.SECRET_KEY,
-    mongo_url: process.env.MONGO_URL
+    mongo_url: process.env.MONGO_URL,
+    ethereal_email:process.env.ETHEREAL_EMAIL,
+    ethereal_password:process.env.ETHEREAL_PASSWORD,
+
 }

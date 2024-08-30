@@ -10,16 +10,21 @@ class ProductController {
     async create(req, res) {
         try {
             const data = req.body;
+            console.log("Getting data from fromtend", data);
+
             const { authorization: token } = req.headers;
             const seller = jwt.verify(token, secret_key);
             const product = await ProductService.create(data, seller);
-            return res.send(product);
+            return res.send({
+                success:true,
+                product
+            });
         } catch (error) {
             res.status(400).json({
                 message: "Error in ProductController",
                 error: error
             });
-        } rd
+        }
     }
 
     async createWithVariants(req, res) {
@@ -227,7 +232,7 @@ class ProductController {
             res.status(400).json({
                 message: "Error, didn't shown list",
                 error: error
-  
+
             });
         }
     }
