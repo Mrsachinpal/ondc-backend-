@@ -15,6 +15,11 @@ router.post("/adminLogin", UserAdminController.adminLogin);
 router.post("/addStaff", UserAdminController.addStaff);
 router.get("/sellerList", UserAdminController.sellerList);
 router.get("/staffList/:id", UserAdminController.staffList);
+    
+router.get("/getAdminProfile",UserAdminController.getAdminProfile);
+router.put("/adminProfileUpdate", UserAdminController.adminProfileUpdate);
+router.put("/adminStoreUpdate", UserAdminController.adminStoreUpdate);
+
 router.put("/staffaccessControl", UserAdminController.staffaccessControl);
 router.put("/sellerUpdate", UserAdminController.sellerUpdate);
 router.post("/logout", UserAdminController.logout);

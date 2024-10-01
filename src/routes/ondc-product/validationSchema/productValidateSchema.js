@@ -140,7 +140,7 @@ export const productValidateSchema = {
                 GST_Percentage: Joi.number(),
                 productCategory: Joi.string(),
                 productSubcategory1: Joi.string(),
-                productSubcategory2: Joi.string(),
+                productSubcategory2: Joi.string(),  
                 productSubcategory3: Joi.string(),
                 countryOfOrigin: Joi.string(),
                 maxAllowedQty: Joi.number(),

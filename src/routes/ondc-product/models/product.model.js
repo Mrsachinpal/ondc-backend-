@@ -15,7 +15,7 @@ const productSchema = new mongoose.Schema({
     vegNonVeg :{type:String},
     fulfillmentOption:{type:String},
     timing : {type:Array},
-    fulfilmentId : {type:String},
+    fulfillmentId : {type:String},
     countryOfOrigin :{ type : String},
     GST_Percentage: {type:Number},
     productCategory: {type:String},
@@ -27,7 +27,7 @@ const productSchema = new mongoose.Schema({
     maxAllowedQty: {type:Number},
     packQty:{type:String},  
     UOM: {type:String},//units of measure
-    UOMValue: {type:String},//units of measure
+    UOMValue: {type:String},//units of measure 
     length: {type:String},
     breadth: {type:String},
     height: {type:String},
@@ -35,24 +35,24 @@ const productSchema = new mongoose.Schema({
     isReturnable: {type:Boolean},
     returnWindow: {type:String},
     isVegetarian: {type:Boolean},
-    manufacturerName: {type:String},
-    manufacturedDate: {type:String},
+    manufactureName: {type:String},
+    manufactureDate: {type:String},
     nutritionalInfo: {type:String},
     additiveInfo: {type:String},
     instructions: {type:String},
     isCancellable: {type:Boolean},
-    availableOnCod: {type:Boolean},
+    availableOnCOD: {type:Boolean},
     longDescription: {type:String},
     description: {type:String},
     organization: { type: String, ref: 'Organization' },
     images: {type:Array},
     createdBy:{type:String},
     published:{type:Boolean,default:true},
-    manufacturerOrPackerName:{type:String},
-    manufacturerOrPackerAddress:{type:String},
+    manufactureOrPackerName:{type:String},
+    manufactureOrPackerAddress:{type:String},
     commonOrGenericNameOfCommodity:{type:String},
     monthYearOfManufacturePackingImport:{type:String},
-    importerFSSAILicenseNo:{type:String},
+    importFSSAILicenseNo:{type:String},
     brandOwnerFSSAILicenseNo:{type:String}
 
 },{  

@@ -12,6 +12,7 @@ router.post('/Productwithvariant', verifyToken, middleware({ schema: productVali
 router.put('/products/:productId', verifyToken, middleware({ schema: productValidateSchema.update() }), ProductController.update);
 router.put('/productWithVariant', verifyToken, middleware({ schema: productValidateSchema.updateWithVariant() }), ProductController.updateWithVariants);
 router.post('/uploadBulk', verifyToken, upload.single('file'), ProductController.uploadCatalogue);
+router.get('/getproduct/:productId',  verifyToken,ProductController.getProduct);
 router.get('/products', verifyToken, ProductController.list);
 router.get('/search', verifyToken, ProductController.search);
 router.put("/productStatus", verifyToken, ProductController.productStatus);

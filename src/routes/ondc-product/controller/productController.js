@@ -21,8 +21,8 @@ class ProductController {
             });
         } catch (error) {
             res.status(400).json({
-                message: "Error in ProductController",
-                error: error
+                message:   "Error in creating product",
+                error: error.message
             });
         }
     }
@@ -43,9 +43,7 @@ class ProductController {
 
     async update(req, res) {
         try {
-            console.log('updateapi hit hui initially');
             const params = req.params
-            console.log('object id ', params);
             const { authorization: token } = req.headers;
             const seller = jwt.verify(token, secret_key);
             const product = await ProductService.update(params.productId, req.body, seller);
@@ -54,9 +52,24 @@ class ProductController {
         } catch (error) {
             // console.log("Error", error);
             res.status(400).json({
-                message: "Error in Update",
+                message: "Error in product Update",
                 error: error
             });
+        }
+    }
+    async getProduct(req,res){
+        try {
+            console.log("api hit ")
+            const params = req.params
+            const { authorization: token } = req.headers;
+            const seller = jwt.verify(token, secret_key);
+            const product = await ProductService.getProduct(params.productId,seller);
+            return res.send(product);
+        } catch (error) {
+            res.status(400).json({
+                message: "Error in getting product",
+                error: error
+            })
         }
     }
 

@@ -84,7 +84,6 @@ class UserAdminController {
 
     async adminRegister(req, res) {
         try {
-            console.log("register api hit ")
             const { detailsOfProvider, KYCdetails, KYCurl, bankDetails } = req.body;
             const { email, mobileNumber, Orgname, password, role, accessStatus, isApprovedByAdmin } = detailsOfProvider;
             const { accountHolderName, accountNo, bankName, branchName, ifscCode, cancelledChequeURL } = bankDetails
@@ -270,6 +269,257 @@ class UserAdminController {
         }
     }
 
+    async getAdminProfile(req, res) {
+        try {
+            const { authorization } = req.headers;
+            if (!authorization) {
+                res.status(200).json({
+                    message: "authorization header is missing"
+                })
+            }
+            const decodedToken = jwt.verify(authorization, secret_key);
+            console.log("decoded token", decodedToken);
+
+
+            const UserDetails = await userDetails.findOne({
+                where: { providerId: decodedToken.providerId }
+            })
+            const BankDetails = await bankInfo.findOne({
+                where: { providerId: decodedToken.providerId }
+            })
+            const OrganizationDetails = await OrgDetails.findOne({
+                where: { providerId: decodedToken.providerId }
+            })
+            if (!UserDetails && !BankDetails && !OrganizationDetails) {
+                res.status(200).json({
+                    success: false,
+                    messsage: "data didn't found",
+                })
+            }
+            const data = {
+                UserDetails,
+                BankDetails,
+                OrganizationDetails
+            }
+            res.status(200).json({
+                success: true,
+                data
+            })
+        } catch (error) {
+            res.status(400).json({
+                error
+            })
+        }
+    }
+
+    async adminProfileUpdate(req, res) {
+        try {
+            const { authorization } = req.headers;
+            if (!authorization) {
+                return res.status(401).json({ message: 'Authorization header is missing' });
+            }
+            const decodedToken = jwt.verify(authorization, secret_key);
+            const { providerId } = decodedToken;
+            const { detailsOfProvider, KYCdetails, KYCurl, bankDetails, storeDetails } = req.body;
+            const { mobileNumber, email } = detailsOfProvider;
+            const { accountHolderName, accountNo, bankName, branchName, ifscCode, cancelledChequeURL } = bankDetails
+            const { providerName, registeredAdd, storeEmail, mobileNo, PANNo, GSTIN, FSSAINo } = KYCdetails;
+            const { address, idProof, pan, gst } = KYCurl;
+            // const { category, logoURL, location, locationAvailabilityPANIndia, defaultCancellable, defaultReturnable, fulfillments,
+            //     supportDetails, radius, logisticsBppId, logisticsDeliveryType, Address, storeTimings } = storeDetails;
+            // const { building, city, state, country, code, locality } = Address;
+            // const { status, holidays, enabled } = storeTimings;
+
+            // const providerNameExist = await OrgDetails.findOne({ where: { providerName: providerName } });
+            // if (providerNameExist) {
+            //     return res.status(422).json({ message: 'Provider name already exists', success: false });
+            // }
+
+            // const storeEmailExist = await OrgDetails.findOne({ where: { storeEmail: storeEmail } });
+            // if (storeEmailExist) {
+            //     return res.status(422).json({ message: 'Store Email already exists', success: false });
+            // }
+
+            // const mobileNoExist = await OrgDetails.findOne({ where: { mobileNo: mobileNo } });
+            // if (mobileNoExist) {
+            //     return res.status(422).json({ message: 'Mobile Number already exists', success: false });
+            // }
+
+            // const panNoExist = await OrgDetails.findOne({ where: { PANNo: PANNo } });
+            // if (panNoExist) {
+            //     return res.status(422).json({ message: 'Pan Number already exists', success: false });
+            // }
+
+            // const GSTINExist = await OrgDetails.findOne({ where: { GSTIN: GSTIN } });
+            // if (GSTINExist) {
+            //     return res.status(422).json({ message: 'GSTIN already exists', success: false });
+            // }
+            // const FSSAIExist = await OrgDetails.findOne({ where: { FSSAINo: FSSAINo } });
+            // if (FSSAIExist) {
+            //     return res.status(422).json({ message: 'FSSAINo already exists', success: false });
+            // }
+
+            const UserDetails = {
+                email,
+                mobileNumber,
+            }
+            const BankDetails = {
+                accHolderName: accountHolderName,
+                accNo: accountNo,
+                bankName: bankName,
+                branchName: branchName,
+                ifscCode: ifscCode,
+                cancelledChequeUrl: cancelledChequeURL
+            }
+            // const fulfillmentsData = fulfillments.map(fd => ({
+            //     id: uuidv4(),
+            //     type: fd?.type,
+            //     contact: {
+            //         email: fd?.contact?.email,
+            //         phone: fd?.contact?.phone
+            //     }
+            // }));
+            const OrganizationDetails = {
+                providerName,
+                registeredAdd,
+                storeEmail,
+                mobileNo,
+                PANNo,
+                GSTIN,
+                FSSAINo,
+                addressURL: address,
+                idProofURL: idProof,
+                panURL: pan,
+                gstURL: gst,
+
+                // category,
+                // logoURL,
+                // location,
+                // locationAvailabilityPANIndia,
+                // defaultCancellable,
+                // defaultReturnable,
+                // fulfillments: fulfillmentsData,
+                // building,
+                // city,
+                // state,
+                // country,
+                // code,
+                // locality,
+                // supportDetails,
+                // storeTimingsStatus: status,
+                // storeTimingHolidays: holidays,
+                // storeTimingEnabled: enabled,
+                // radius,
+                // logisticsBppId,
+                // logisticsDeliveryType
+
+            }
+            const data = {
+                OrganizationDetails,
+                bankDetails,
+                UserDetails
+
+            }
+
+
+            await OrgDetails.update(OrganizationDetails, {
+                where: { providerId }
+            });
+            await bankInfo.update(BankDetails, {
+                where: { providerId }
+            });
+            await userDetails.update(UserDetails, {
+                where: { providerId }
+            });
+            res.status(200).json({
+                success: true,
+                data: data
+            })
+
+        } catch (error) {
+            console.log(error);
+        }
+    }
+    async adminStoreUpdate(req,res){
+        try {
+
+            const { authorization } = req.headers;
+            if (!authorization) {
+                return res.status(401).json({ message: 'Authorization header is missing' });
+            }
+            const adminRegisterToken = authorization;
+            const decodedToken = jwt.verify(adminRegisterToken, secret_key);
+            const { sellerId, providerId } = decodedToken;
+            const UniqueKey = providerId || sellerId;
+
+            if (!UniqueKey) {
+                return res.status(400).json({ message: 'Unique Id is missing from the token' });
+            }
+
+            const { storeDetails } = req.body;
+            const { category, logoURL, location, locationAvailabilityPANIndia, defaultCancellable, defaultReturnable, fulfillments,
+                supportDetails, radius, logisticsBppId, logisticsDeliveryType, Address, storeTimings } = storeDetails;
+            const { building, city, state, country, code, locality } = Address;
+            const { status, holidays, enabled } = storeTimings;
+
+            const fulfillmentsData = fulfillments.map(fd => ({
+                id: uuidv4(),
+                type: fd?.type,
+                contact: {
+                    email: fd?.contact?.email,
+                    phone: fd?.contact?.phone
+                }
+            }));
+
+            // Search for the user based on providerId or sellerId
+            const isExist = await userDetails.findOne({
+                where: { providerId: UniqueKey },
+                raw: true
+            });
+
+            if (!isExist) {
+                return res.status(404).json({ message: "ProviderId or SellerId does not exist" });
+            }
+
+            const OrganizationDetails = {
+                category,
+                logoURL,
+                location,
+                locationAvailabilityPANIndia,
+                defaultCancellable,
+                defaultReturnable,
+                fulfillments: fulfillmentsData,
+                building,
+                city,
+                state,
+                country,
+                code,
+                locality,
+                supportDetails,
+                storeTimingsStatus: status,
+                storeTimingHolidays: holidays,
+                storeTimingEnabled: enabled,
+                radius,
+                logisticsBppId,
+                logisticsDeliveryType
+            };
+
+            await OrgDetails.update(OrganizationDetails, {
+                where: { providerId: UniqueKey }
+            });
+
+            const token = jwt.sign({ sellerId }, secret_key, { expiresIn: '1h' });
+            res.status(201).json({
+                message: "Store details update successfully",
+                success: true
+            });
+
+        } catch (error) {
+            console.log(error);
+            res.status(400).json({ error });
+        }
+    }
+
     async adminLogin(req, res) {
         try {
             const { email, password } = req.body;
@@ -366,7 +616,7 @@ class UserAdminController {
                     message: 'Password reset link sent to your email',
                 });
             } else if (staff) {
-                const token = jwt.sign({ email_id:staff.email_id}, secret_key, { expiresIn: '1h' });
+                const token = jwt.sign({ email_id: staff.email_id }, secret_key, { expiresIn: '1h' });
                 const transporter = nodemailer.createTransport({
                     host: 'smtp.ethereal.email',
                     port: 587,
@@ -409,17 +659,17 @@ class UserAdminController {
 
             if (Provider_Id) {
                 const user = await userDetails.findOne({
-                    where: {  providerId:Provider_Id },
+                    where: { providerId: Provider_Id },
                     raw: true
                 });
-                console.log("user",user)
+                console.log("user", user)
                 if (!user) {
                     return res.status(404).json({ message: 'User not found' });
                 }
                 const hashedPassword = await bcrypt.hash(newPassword, 10);
                 await userDetails.update(
                     { password: hashedPassword },
-                    { where: { providerId:Provider_Id } }
+                    { where: { providerId: Provider_Id } }
                 );
                 console.log("Password reset for user");
 
@@ -427,7 +677,7 @@ class UserAdminController {
             } else if (email_id) {
 
                 const staff = await User.findOne({
-                    where: {email_id},
+                    where: { email_id },
                     raw: true
                 });
 
@@ -438,7 +688,7 @@ class UserAdminController {
                 await User.update(
                     { password: hashedPassword },
                     {
-                        where: {email_id},
+                        where: { email_id },
                     }
                 );
                 console.log("Password reset for staff");

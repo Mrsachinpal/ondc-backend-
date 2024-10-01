@@ -8,11 +8,11 @@ import ProductModel from "../models/product.model.js";
 import { DuplicateRecordFoundError } from "../../lib/errors/index.js"
 
 
-class ProductService {  
+class ProductService {
     async create(data, currentSeller) {
         try {
             const { orgId, staffID, providerId } = currentSeller;
-            const productExist = await ProductModel.findOne({ productName: commonDetails.data.productName, organization: providerId ?? orgId });
+            const productExist = await ProductModel.findOne({ productName: data.commonDetails.productName, organization: providerId ?? orgId });
             if (productExist) {
                 throw new DuplicateRecordFoundError(MESSAGES.PRODUCT_ALREADY_EXISTS)
             }
@@ -144,11 +144,9 @@ class ProductService {
 
     // async update(productId, data, currentSeller) {
     //     try {
-    //         console.log('product serice file pr aa gaya hu');
     //         const commonDetails = data.commonDetails
     //         const commonAttributeValues = data.commonAttributeValues
     //         const { staffID, orgId, providerId } = currentSeller
-    //         console.log('bhai data.commonDeatils ka data',commonDetails);
     //         const product = await ProductModel.findOne({ where: { productId: productId, organization: orgId ?? providerId }, raw: true });
     //         let productObj = { ...product, ...commonDetails }
     //         await ProductModel.update(productObj, { where: { productId: productId } });
@@ -168,19 +166,33 @@ class ProductService {
     async update(productId, data, currentSeller) {
         try {
             const commonDetails = data.commonDetails;
-            const commonAttributeValues = data.commonAttributeValues;
-            const { staffID, orgId, providerId } = currentSeller;
-            const product = await ProductModel.findOne({ _id: productId, organization: orgId ?? providerId });
+            const { providerId } = currentSeller;
+            const productExist = await ProductModel.findOne({ productName: data.commonDetails.productName, createdBy: providerId });
+            if (productExist) {
+                return { success: false, message: "Product already exist "}
+            }
+
+            const product = await ProductModel.findOne({ _id: productId, createdBy: providerId });
             const updatedProduct = await ProductModel.findByIdAndUpdate(productId, { $set: commonDetails }, { new: true });
-            if (commonAttributeValues) {
-                await this.createAttribute({ productId: productId, attribute: commonAttributeValues }, currentSeller)
-            }
-            if (data.customizationDetails) {
-                await productCustomizationService.create(productId, data.customizationDetails, currentSeller);
-            }
-            return { message: "Suucessfully updated", data: updatedProduct };
+            return { message: "Successfully updated", data: updatedProduct };
+             
         } catch (error) {
-            console.log("Error", error);
+            res.status(400).json({
+                message: "Error in Product update",
+                error: error
+            })
+        }
+    }
+    async getProduct(productId, currentSeller) {
+        try {
+            const { providerId } = currentSeller;
+            const product = await ProductModel.findOne({ _id: productId, createdBy: providerId });
+            console.log("product", product);
+            return { message: true, data: product };
+        } catch (error) {
+            res.status(200).json({
+                message: "Error in Product update",
+            })
         }
     }
 
@@ -286,9 +298,9 @@ class ProductService {
 
             if (stock === "inStock") {
                 query.quantity = { $gt: 0 };
-            } else if (stock === "outOfStock") {    
+            } else if (stock === "outOfStock") {
                 query.quantity = { $lte: 0 };
-            } 
+            }
             // console.log("query", query);
             let products = await ProductModel.find(query).exec();
             console.log("products", products);
@@ -305,7 +317,6 @@ class ProductService {
             console.log("Error", error);
         }
     }
-
 
 }
 
